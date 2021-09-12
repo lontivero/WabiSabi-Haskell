@@ -3,6 +3,13 @@ module WabiSabi where
 data GE = GE Integer Integer | Infinity
   deriving Show
 
+data Proof = Proof [GE] [Integer]
+    deriving Show
+
+type Challenge = Integer
+type Witness = Integer
+type Generator = GE
+
 instance S.Semigroup GE where
   (<>) = (⊕)
 
@@ -18,6 +25,13 @@ instance Eq GE where
       distance _        Infinity = 1
       distance (GE x1 y1) (GE x2 y2) = (x2-x1)^2 + (y2-y1)^2
 
+-- secp256 parameters
+pp = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFC2F :: Integer
+nn = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364141 :: Integer
+g  = Generator
+     0x79BE667EF9DCBBAC55A06295CE870B07029BFCDB2DCE28D959F2815B16F81798
+     0x483ADA7726A3C4655DA4FBFC0E1108A8FD17B448A68554199C47D08FFB10D4B8
+
 inverse :: GE -> GE
 inverse Infinity = Infinity
 inverse (GE x y) = GE x (-y)
@@ -30,9 +44,9 @@ inverse (GE x y) = GE x (-y)
   | p == q     = mkGE $ 3*x1^2 `div` (2*y1)
   | otherwise  = mkGE $ (y2 - y1) `div` (x2 - x1)
   where
-    mkGE l = let x = (l^2 - x1 - x2) `mod` nn
+    mkGE l = let x = (l^2 - x1 - x2)   `mod` nn
                  y = (l*(x1 - x) - y1) `mod` pp
-              in GE x y
+             in GE x y
 
 (⋅) :: Integer -> GE -> GE
 (⋅) n p
@@ -48,25 +62,12 @@ onCurve :: GE -> Bool
 onCurve Infinity = False
 onCurve (GE x y) = (y^2 - x^3) `mod` pp == 7
 
-pp :: Integer
-pp = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFC2F
-nn :: Integer
-nn = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364141
 
-g :: GE
-g = GE
-    0x79BE667EF9DCBBAC55A06295CE870B07029BFCDB2DCE28D959F2815B16F81798
-    0x483ADA7726A3C4655DA4FBFC0E1108A8FD17B448A68554199C47D08FFB10D4B8
-
-
-data Proof = Proof [GE] [Integer]
-    deriving Show
-
-challenge :: [GE] -> Integer
+challenge :: [GE] -> Challenge
 challenge gs = x
     where (GE x _) = foldr1 (⊕) gs
 
-prove :: [Integer] -> [Integer]-> [GE] -> Proof
+prove :: [Witness] -> [Integer]-> [Generator] -> Proof
 prove ws rs gs = Proof nonces s
   where
     nonces = zipWith (⋅) rs gs
