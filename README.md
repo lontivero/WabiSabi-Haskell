@@ -1,2 +1,2 @@
 # WabiSabi-Haskell
-A toy WbiSabi coinjoin crypto protocol implementation in Haskell
+A toy WabiSabi coinjoin crypto protocol implementation in Haskell
